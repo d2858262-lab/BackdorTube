@@ -5,81 +5,55 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Subscriptions
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.ornek.tizentube.model.VideoItem
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ornek.tizentube.ui.components.TizenSearchBar
 import com.ornek.tizentube.ui.components.VideoCard
 import com.ornek.tizentube.ui.components.YouTubePlayerView
+import com.ornek.tizentube.ui.viewmodel.VideoViewModel
+import com.ornek.tizentube.model.VideoItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    val videos = remember { VideoItem.getMockVideos() }
+fun HomeScreen(vm: VideoViewModel = viewModel()) {
+    val pipedVideos by vm.videos.collectAsState()
     var selectedVideoId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("TizenTube", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F0F0F))
+                title = { Text("BackdorTube", color = Color.Red) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color(0xFF0F0F0F)) {
-                NavigationBarItem(
-                    selected = true, onClick = {},
-                    icon = { Icon(Icons.Default.Home, "Ana Sayfa") },
-                    label = { Text("Ana Sayfa") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White, selectedTextColor = Color.White,
-                        unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    selected = false, onClick = {},
-                    icon = { Icon(Icons.Default.Subscriptions, "Abonelikler") },
-                    label = { Text("Abonelikler") },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    selected = false, onClick = {},
-                    icon = { Icon(Icons.Default.VideoLibrary, "Kütüphane") },
-                    label = { Text("Kütüphane") },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Transparent
-                    )
-                )
+            NavigationBar(containerColor = Color.Black) {
+                NavigationBarItem(selected = true, onClick = { vm.fetchTrending() }, 
+                    icon = { Icon(Icons.Default.Home, "Trend") }, label = { Text("Trend") })
+                NavigationBarItem(selected = false, onClick = { }, 
+                    icon = { Icon(Icons.Default.Subscriptions, "Takip") }, label = { Text("Takip") })
             }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFF0F0F0F))
-        ) {
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize().background(Color.Black)) {
             if (selectedVideoId != null) {
                 YouTubePlayerView(videoId = selectedVideoId!!, autoPlay = true)
             }
-            TizenSearchBar(onSearch = {})
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(videos) { video ->
-                    VideoCard(video = video, onClick = { selectedVideoId = video.id })
+            TizenSearchBar(onSearch = { query -> vm.searchVideos(query) })
+            
+            LazyColumn {
+                items(pipedVideos) { v ->
+                    val videoId = v.url.split("v=").last()
+                    VideoCard(
+                        video = VideoItem(videoId, v.title, v.uploaderName, v.thumbnail, 
+                            "${v.duration/60}:${v.duration%60}", "${v.views/1000}B", v.uploadedDate),
+                        onClick = { selectedVideoId = videoId }
+                    )
                 }
             }
         }
