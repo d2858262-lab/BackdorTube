@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import com.ornek.tizentube.model.VideoItem
 @Composable
 fun HomeScreen(vm: VideoViewModel = viewModel()) {
     val pipedVideos by vm.videos.collectAsState()
+    val isLoading by vm.isLoading.collectAsState()
     var selectedVideoId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
@@ -30,14 +32,6 @@ fun HomeScreen(vm: VideoViewModel = viewModel()) {
                 title = { Text("BackdorTube", color = Color.Red) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
             )
-        },
-        bottomBar = {
-            NavigationBar(containerColor = Color.Black) {
-                NavigationBarItem(selected = true, onClick = { vm.fetchTrending() }, 
-                    icon = { Icon(Icons.Default.Home, "Trend") }, label = { Text("Trend") })
-                NavigationBarItem(selected = false, onClick = { }, 
-                    icon = { Icon(Icons.Default.Subscriptions, "Takip") }, label = { Text("Takip") })
-            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize().background(Color.Black)) {
@@ -45,15 +39,21 @@ fun HomeScreen(vm: VideoViewModel = viewModel()) {
                 YouTubePlayerView(videoId = selectedVideoId!!, autoPlay = true)
             }
             TizenSearchBar(onSearch = { query -> vm.searchVideos(query) })
-            
-            LazyColumn {
-                items(pipedVideos) { v ->
-                    val videoId = v.url.split("v=").last()
-                    VideoCard(
-                        video = VideoItem(videoId, v.title, v.uploaderName, v.thumbnail, 
-                            "${v.duration/60}:${v.duration%60}", "${v.views/1000}B", v.uploadedDate),
-                        onClick = { selectedVideoId = videoId }
-                    )
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color.Red)
+                }
+            } else {
+                LazyColumn {
+                    items(pipedVideos) { v ->
+                        val videoId = v.url.split("v=").last()
+                        VideoCard(
+                            video = VideoItem(videoId, v.title, v.uploaderName, v.thumbnail, 
+                                "${v.duration/60}:${v.duration%60}", "${v.views/1000}B", v.uploadedDate),
+                            onClick = { selectedVideoId = videoId }
+                        )
+                    }
                 }
             }
         }

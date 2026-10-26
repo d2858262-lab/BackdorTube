@@ -20,17 +20,33 @@ class VideoViewModel : ViewModel() {
     private val _videos = MutableStateFlow<List<PipedVideo>>(emptyList())
     val videos: StateFlow<List<PipedVideo>> = _videos
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     init { fetchTrending() }
 
     fun fetchTrending() {
         viewModelScope.launch {
-            try { _videos.value = api.getTrending() } catch (e: Exception) { }
+            _isLoading.value = true
+            try { 
+                _videos.value = api.getTrending() 
+            } catch (e: Exception) { 
+                _videos.value = emptyList()
+            }
+            _isLoading.value = false
         }
     }
 
     fun searchVideos(query: String) {
         viewModelScope.launch {
-            try { _videos.value = api.search(query).items } catch (e: Exception) { }
+            _isLoading.value = true
+            try { 
+                val response = api.search(query)
+                _videos.value = response.items 
+            } catch (e: Exception) {
+                _videos.value = emptyList()
+            }
+            _isLoading.value = false
         }
     }
 }
