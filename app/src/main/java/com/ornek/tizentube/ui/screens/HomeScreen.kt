@@ -52,8 +52,7 @@ fun HomeScreen(vm: VideoViewModel = viewModel()) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(48.dp))
                     Text(text = errorMsg!!, color = Color.White, textAlign = TextAlign.Center)
                     Button(onClick = { vm.fetchTrending() }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
                         Text("Tekrar Dene")
@@ -62,10 +61,25 @@ fun HomeScreen(vm: VideoViewModel = viewModel()) {
             } else {
                 LazyColumn {
                     items(pipedVideos) { v ->
-                        val videoId = v.url.split("v=").last()
+                        // Boş değer kontrolü ve güvenli atama
+                        val videoId = v.url?.split("v=")?.last() ?: ""
+                        val title = v.title ?: "Başlıksız Video"
+                        val uploader = v.uploaderName ?: "Bilinmeyen Kanal"
+                        val thumb = v.thumbnail ?: ""
+                        val dur = v.duration ?: 0L
+                        val views = v.views ?: 0L
+                        val date = v.uploadedDate ?: "Tarih Bilgisi Yok"
+
                         VideoCard(
-                            video = VideoItem(videoId, v.title, v.uploaderName, v.thumbnail, 
-                                "${v.duration/60}:${v.duration%60}", "${v.views/1000}B", v.uploadedDate),
+                            video = VideoItem(
+                                id = videoId,
+                                title = title,
+                                channel = uploader,
+                                thumbnailUrl = thumb,
+                                duration = "${dur / 60}:${String.format("%02d", dur % 60)}",
+                                views = "${views / 1000}B",
+                                uploadTime = date
+                            ),
                             onClick = { selectedVideoId = videoId }
                         )
                     }
