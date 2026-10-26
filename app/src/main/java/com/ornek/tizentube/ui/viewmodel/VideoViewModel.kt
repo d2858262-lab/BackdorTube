@@ -10,25 +10,31 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.google.gson.GsonBuilder
 import android.util.Log
 
 class VideoViewModel : ViewModel() {
     
-    // HTTP 403'ü aşmak için User-Agent ekliyoruz
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36")
+                .header("Accept", "application/json") // Sadece JSON istediğimizi belirttik
                 .build()
             chain.proceed(request)
         }
         .build()
 
-    // kavin.rocks yerine daha stabil olan official-server veya lunar sunucusunu deneyelim
+    // Hata mesajında istenen 'setLenient' özelliğini ekliyoruz
+    private val gson = GsonBuilder()
+        .setLenient() 
+        .create()
+
+    // Çok daha stabil olan Garuda Linux Piped Instance'ını kullanıyoruz
     private val api = Retrofit.Builder()
-        .baseUrl("https://pipedapi.lunar.icu/") 
+        .baseUrl("https://piped-api.garudalinux.org/") 
         .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
         .create(PipedService::class.java)
 
@@ -50,8 +56,8 @@ class VideoViewModel : ViewModel() {
             try { 
                 _videos.value = api.getTrending() 
             } catch (e: Exception) { 
-                _errorMessage.value = "Hata: ${e.message ?: "Sunucu reddetti"}"
-                Log.e("BackdorTube", "API Error", e)
+                _errorMessage.value = "Sunucu Hatası: ${e.message ?: "Veri alınamadı"}"
+                Log.e("BackdorTube", "Trending Error", e)
             }
             _isLoading.value = false
         }
@@ -65,7 +71,7 @@ class VideoViewModel : ViewModel() {
                 val response = api.search(query)
                 _videos.value = response.items 
             } catch (e: Exception) {
-                _errorMessage.value = "Arama Hatası: ${e.message}"
+                _errorMessage.value = "Arama Hatası: Sunucu meşgul, lütfen tekrar deneyin."
                 Log.e("BackdorTube", "Search Error", e)
             }
             _isLoading.value = false
