@@ -18,21 +18,18 @@ class VideoViewModel : ViewModel() {
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36")
-                .header("Accept", "application/json") // Sadece JSON istediğimizi belirttik
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                .header("Accept", "application/json")
                 .build()
             chain.proceed(request)
         }
         .build()
 
-    // Hata mesajında istenen 'setLenient' özelliğini ekliyoruz
-    private val gson = GsonBuilder()
-        .setLenient() 
-        .create()
+    private val gson = GsonBuilder().setLenient().create()
 
-    // Çok daha stabil olan Garuda Linux Piped Instance'ını kullanıyoruz
+    // Test ettiğimiz ve 200 OK aldığımız sunucu
     private val api = Retrofit.Builder()
-        .baseUrl("https://piped-api.garudalinux.org/") 
+        .baseUrl("https://pipedapi.ducks.party/") 
         .client(client)
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
@@ -54,9 +51,11 @@ class VideoViewModel : ViewModel() {
             _isLoading.value = true
             _errorMessage.value = null
             try { 
-                _videos.value = api.getTrending() 
+                // Curl testindeki gibi ?region=TR ekleniyor
+                val result = api.getTrending("TR")
+                _videos.value = result.filter { !it.title.isNullOrEmpty() }
             } catch (e: Exception) { 
-                _errorMessage.value = "Sunucu Hatası: ${e.message ?: "Veri alınamadı"}"
+                _errorMessage.value = "Hata: Videolar yüklenemedi. (ducks.party)"
                 Log.e("BackdorTube", "Trending Error", e)
             }
             _isLoading.value = false
@@ -68,10 +67,10 @@ class VideoViewModel : ViewModel() {
             _isLoading.value = true
             _errorMessage.value = null
             try { 
-                val response = api.search(query)
-                _videos.value = response.items 
+                val results = api.search(query, "TR")
+                _videos.value = results.filter { !it.title.isNullOrEmpty() }
             } catch (e: Exception) {
-                _errorMessage.value = "Arama Hatası: Sunucu meşgul, lütfen tekrar deneyin."
+                _errorMessage.value = "Arama başarısız."
                 Log.e("BackdorTube", "Search Error", e)
             }
             _isLoading.value = false

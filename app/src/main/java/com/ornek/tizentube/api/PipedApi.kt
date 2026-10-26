@@ -4,21 +4,22 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 data class PipedVideo(
-    val url: String,
-    val title: String,
-    val uploaderName: String,
-    val thumbnail: String,
-    val duration: Int,
-    val views: Long,
-    val uploadedDate: String
+    val url: String?,
+    val title: String?,
+    val uploaderName: String?,
+    val thumbnail: String?,
+    val duration: Long?,
+    val views: Long?,
+    val uploadedDate: String?
 )
 
-data class SearchResponse(val items: List<PipedVideo>)
-
 interface PipedService {
-    @GET("trending?region=TR")
-    suspend fun getTrending(): List<PipedVideo>
+    @GET("trending")
+    suspend fun getTrending(@Query("region") region: String): List<PipedVideo>
 
     @GET("search")
-    suspend fun search(@Query("q") query: String): SearchResponse
+    suspend fun search(
+        @Query("q") query: String,
+        @Query("region") region: String
+    ): List<PipedVideo>
 }
