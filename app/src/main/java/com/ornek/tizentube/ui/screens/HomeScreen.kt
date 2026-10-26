@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ornek.tizentube.ui.components.TizenSearchBar
@@ -24,6 +25,7 @@ import com.ornek.tizentube.model.VideoItem
 fun HomeScreen(vm: VideoViewModel = viewModel()) {
     val pipedVideos by vm.videos.collectAsState()
     val isLoading by vm.isLoading.collectAsState()
+    val errorMsg by vm.errorMessage.collectAsState()
     var selectedVideoId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
@@ -43,6 +45,19 @@ fun HomeScreen(vm: VideoViewModel = viewModel()) {
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color.Red)
+                }
+            } else if (errorMsg != null) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = errorMsg!!, color = Color.White, textAlign = TextAlign.Center)
+                    Button(onClick = { vm.fetchTrending() }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
+                        Text("Tekrar Dene")
+                    }
                 }
             } else {
                 LazyColumn {

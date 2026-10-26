@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import android.util.Log
 
 class VideoViewModel : ViewModel() {
     private val api = Retrofit.Builder()
@@ -23,15 +24,20 @@ class VideoViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
     init { fetchTrending() }
 
     fun fetchTrending() {
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
             try { 
                 _videos.value = api.getTrending() 
             } catch (e: Exception) { 
-                _videos.value = emptyList()
+                _errorMessage.value = "Hata: ${e.localizedMessage ?: "Sunucuya bağlanılamadı"}"
+                Log.e("BackdorTube", "API Error", e)
             }
             _isLoading.value = false
         }
@@ -40,11 +46,13 @@ class VideoViewModel : ViewModel() {
     fun searchVideos(query: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
             try { 
                 val response = api.search(query)
                 _videos.value = response.items 
             } catch (e: Exception) {
-                _videos.value = emptyList()
+                _errorMessage.value = "Arama Hatası: ${e.localizedMessage}"
+                Log.e("BackdorTube", "Search Error", e)
             }
             _isLoading.value = false
         }
